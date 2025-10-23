@@ -6,7 +6,8 @@
       "Bash(node:*)",
       "Bash(npm install:*)",
       "Bash(git init:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Read(//mnt/c/Users/gowthamraj.srinivasa/Projects/Assignments_AIML/**)"
     ],
     "deny": [],
     "ask": []
