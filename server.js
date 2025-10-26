@@ -52,11 +52,17 @@ async function generateEmbeddings(chunks) {
 
     const embeddings = new GoogleGenerativeAIEmbeddings({
         apiKey: process.env.GEMINI_API_KEY,
-        model: "embedding-001",
+        model: "text-embedding-004",
     });
 
     const vectors = await embeddings.embedDocuments(chunks);
-    console.log(`[RAG] ✅ Generated ${vectors.length} vectors.`);
+
+    // Validate vectors
+    if (!vectors || vectors.length === 0 || vectors[0].length === 0) {
+        throw new Error('Failed to generate valid embeddings - empty vectors returned');
+    }
+
+    console.log(`[RAG] ✅ Generated ${vectors.length} vectors (dimension: ${vectors[0].length}).`);
     return vectors;
 }
 
@@ -89,15 +95,15 @@ async function storeInPinecone(chunks, vectors) {
 
 async function queryDocument(question) {
     console.log("[RAG] Step 4: Query and Retrieve");
-    
+
     if (!question || typeof question !== 'string') {
         throw new Error('Invalid question provided');
     }
-    
+
     // 1. Embed the question
     const embeddings = new GoogleGenerativeAIEmbeddings({
         apiKey: process.env.GEMINI_API_KEY,
-        model: "embedding-001",
+        model: "text-embedding-004",
     });
     const queryVector = await embeddings.embedQuery(question);
     
