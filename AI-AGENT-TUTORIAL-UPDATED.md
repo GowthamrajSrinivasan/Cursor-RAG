@@ -270,6 +270,23 @@ Answer with citations:`;
 
 Create `agent.js`:
 
+**💡 AI Prompt to Generate This File:**
+
+```
+Create a TaskAgent class in JavaScript that:
+1. Takes genAI and ragFunctions as constructor parameters
+2. Stores references to searchKnowledgeBase, generateAnswer, and queryCounter functions
+3. Has three main methods: analyzeIntent, executeTools, and generateResponse
+4. Uses Google Gemini API for intent classification
+5. Handles multiple intent types: answer_question, search_knowledge_base, get_query_count, unknown
+6. Includes proper error handling and console logging
+7. Returns structured responses for each tool type
+
+Use ES6 module syntax with export default.
+```
+
+**Full Implementation:**
+
 ```javascript
 class TaskAgent {
     constructor({ genAI, ragFunctions }) {
@@ -414,7 +431,59 @@ await this.genAI.models.generateContent({
 
 ### Step 2.2: Add Helper Functions
 
-Add to `server.js`:
+Add these tool functions to `server.js`:
+
+**💡 AI Prompt for Logging Function:**
+
+```
+Create a logQuery function in JavaScript that:
+1. Takes query, answer, chunksRetrieved, and duration as parameters
+2. Creates a 'logs' directory if it doesn't exist
+3. Formats a log entry with timestamp, query, answer, chunks, and duration
+4. Appends the entry to 'logs/query-log.txt'
+5. Uses async/await with fs.promises
+6. Separates entries with 80 dashes
+
+Include proper error handling and use ISO timestamps.
+```
+
+**💡 AI Prompt for Query Counter:**
+
+```
+Create a queryCounter function in JavaScript that:
+1. Reads current count from 'logs/query-count.txt'
+2. Increments the count by 1
+3. Saves the new count back to the file
+4. Returns the new count
+5. Creates the logs directory if needed
+6. Handles the case when the file doesn't exist (start at 0)
+7. Uses async/await with fs.promises
+
+Handle parseInt errors and default to 0 if the file is corrupted.
+```
+
+**💡 AI Prompt for Knowledge Base Search:**
+
+```
+Create a searchKnowledgeBase function that:
+1. Takes a query string as input
+2. Calls the existing queryDocument function
+3. Maps the raw string results to formatted objects with:
+   - chunkId (e.g., "chunk_0", "chunk_1")
+   - content (the actual text)
+   - relevanceScore (decreasing from 1.0 by 0.1 per result)
+4. Returns a structured response object with:
+   - success: boolean
+   - query: original query
+   - results: formatted results array
+   - resultCount: number of results
+5. Includes try/catch error handling
+6. Returns error structure if search fails
+
+This wraps the RAG pipeline in an agent-friendly interface.
+```
+
+**Full Implementation:**
 
 ```javascript
 // Logging function
@@ -487,7 +556,46 @@ async function searchKnowledgeBase(query) {
 
 ### Step 2.3: Integrate Agent with Server
 
-Add to `server.js`:
+Add API endpoints to `server.js`:
+
+**💡 AI Prompt for Agent Integration:**
+
+```
+Add the following to an Express server.js file:
+
+1. Import TaskAgent from './agent.js'
+
+2. Create a ragFunctions object with:
+   - searchKnowledgeBase
+   - generateAnswer
+   - queryCounter
+
+3. Instantiate taskAgent with genAI and ragFunctions
+
+4. Create POST endpoint '/api/answer-question' that:
+   - Extracts question from req.body
+   - Validates question is not empty (400 error if missing)
+   - Calls taskAgent.analyzeIntent(question)
+   - Calls taskAgent.executeTools(intent, question)
+   - Calls taskAgent.generateResponse(intent, toolOutput)
+   - Logs the query with logQuery function
+   - Returns JSON with answer, success, duration, chunksRetrieved
+   - Handles errors with 500 status
+   - Tracks execution time with Date.now()
+
+5. Create GET endpoint '/api/agent-stats' that:
+   - Reads totalQueries from 'logs/query-count.txt'
+   - Reads and parses query logs from 'logs/query-log.txt'
+   - Extracts timestamp, query, answer, chunks, duration using regex
+   - Finds the most recent query time
+   - Returns JSON with success, totalQueries, lastQueryTime, queryLogs array
+   - Reverses logs array so most recent is first
+   - Handles missing files gracefully (empty arrays, 0 count)
+
+Include proper error handling and async/await throughout.
+```
+
+**Full Implementation:**
 
 ```javascript
 import TaskAgent from './agent.js';
@@ -632,6 +740,68 @@ app.get('/api/agent-stats', async (req, res) => {
 ### Step 3.1: Create HTML Interface
 
 Create `index.html`:
+
+**💡 AI Prompt for HTML Layout:**
+
+```
+Create a modern HTML chat interface for an AI agent with:
+
+HTML Structure:
+1. Use Tailwind CSS from CDN for styling
+2. Header with indigo-700 background and "AI Agent Chat" title
+3. Main grid layout: 2/3 for chat, 1/3 for sidebar on desktop (responsive)
+
+Chat Section (left 2/3):
+- Header with "Conversation" title
+- Scrollable chat messages area (id="chatMessages") with overflow-y-auto
+- Initial welcome message from agent
+- Loading indicator (id="toolUsageIndicator") with spinning SVG, initially hidden
+- Form at bottom with text input (id="queryInput") and submit button
+
+Sidebar (right 1/3):
+- Statistics panel showing:
+  - Total Queries (id="totalQueries")
+  - Last Query Time (id="lastQueryTime")
+- Query Logs section with:
+  - Toggle button (id="toggleLogsBtn") showing "Hide Logs"
+  - Logs container (id="queryLogsContainer") visible by default
+  - Scrollable logs content (id="queryLogsContent")
+
+JavaScript Features:
+- Define API endpoints: '/api/answer-question' and '/api/agent-stats'
+- addMessage(sender, text, isError) function that:
+  - Creates message div with proper styling
+  - Handles user (indigo) vs agent (blue) colors
+  - Shows error messages in red
+  - Auto-scrolls to bottom
+  - IMPORTANT: Never adds empty strings to classList
+
+- updateStats() async function that:
+  - Fetches from /api/agent-stats
+  - Updates totalQueries and lastQueryTime
+  - Calls renderQueryLogs if logs are visible
+
+- renderQueryLogs(logs) function that:
+  - Clears previous logs
+  - Creates formatted log entries with timestamp, query, answer, duration
+  - Truncates long answers to 100 chars
+
+- Form submit handler that:
+  - Shows loading indicator
+  - Posts to /api/answer-question
+  - Displays response
+  - Updates stats
+  - Handles errors gracefully
+
+- Toggle logs button handler
+- Initial stats load on page load
+- Load logs initially since visible by default
+- Periodic updates every 10 seconds with setInterval
+
+Use proper error handling, async/await, and modern ES6+ JavaScript.
+```
+
+**Full Implementation:**
 
 ```html
 <!DOCTYPE html>
@@ -903,6 +1073,47 @@ This file contains:
 ### Step 5.1: Create Test Script
 
 Create `test-agent.js`:
+
+**💡 AI Prompt for Test Script:**
+
+```
+Create a test script for the TaskAgent that:
+
+1. Imports:
+   - GoogleGenAI from "@google/genai"
+   - TaskAgent from './agent.js'
+   - dotenv config
+
+2. Initializes GoogleGenAI with GEMINI_API_KEY from environment
+
+3. Creates mock RAG functions object with:
+   - searchKnowledgeBase: returns mock success response with sample result
+   - generateAnswer: returns mock answer string
+   - queryCounter: returns mock count of 1
+
+4. Instantiates TaskAgent with genAI and mockRagFunctions
+
+5. Creates runTests async function that:
+   - Defines array of test queries covering different intents:
+     * "What is AI?" (answer_question)
+     * "Search for machine learning" (search_knowledge_base)
+     * "How many queries?" (get_query_count)
+   - Loops through each test query
+   - For each query:
+     * Logs the test query
+     * Calls agent.analyzeIntent()
+     * Calls agent.executeTools()
+     * Calls agent.generateResponse()
+     * Logs the intent and response
+     * Waits 2 seconds between queries
+   - Logs completion message
+
+6. Calls runTests() to execute
+
+Use ES6 module syntax and proper async/await.
+```
+
+**Full Implementation:**
 
 ```javascript
 import { GoogleGenAI } from "@google/genai";
