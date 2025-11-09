@@ -8,7 +8,11 @@
       "Bash(git init:*)",
       "Bash(git commit:*)",
       "Read(//mnt/c/Users/gowthamraj.srinivasa/Projects/Assignments_AIML/**)",
-      "Bash(open index.html)"
+      "Bash(open index.html)",
+      "Bash(open:*)",
+      "Bash(lsof:*)",
+      "Bash(kill:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
