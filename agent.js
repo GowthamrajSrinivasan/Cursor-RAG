@@ -158,8 +158,39 @@ class TaskAgent {
                 if (toolOutput.success && toolOutput.resultCount > 0) {
                     // Safety check to ensure results[0] and content exist
                     if (toolOutput.results && toolOutput.results[0] && toolOutput.results[0].content) {
-                        const firstResultContent = toolOutput.results[0].content.substring(0, 150) + "..."; // Truncate for brevity
-                        return `Found ${toolOutput.resultCount} relevant results. Here's a snippet from the top result: "${firstResultContent}"`;
+                        let contentToDisplay = toolOutput.results[0].content;
+                        try {
+                            // Attempt to parse the content as JSON
+                            const parsedContent = JSON.parse(contentToDisplay);
+
+                            // Check if it's an object with a 'faqs' array
+                            if (parsedContent && Array.isArray(parsedContent.faqs) && parsedContent.faqs.length > 0) {
+                                const firstFaq = parsedContent.faqs[0];
+                                // Format the first FAQ's question and answer for a user-friendly snippet
+                                contentToDisplay = `Q: ${firstFaq.question} A: ${firstFaq.answer}`;
+                            } else {
+                                // If it's other structured JSON (but not the FAQ format we expected),
+                                // you might want to stringify it with indentation for better readability,
+                                // or extract other relevant fields if their structure is known.
+                                contentToDisplay = JSON.stringify(parsedContent, null, 2);
+                                // Truncate the stringified JSON if it's still too long
+                                if (contentToDisplay.length > 300) {
+                                    contentToDisplay = contentToDisplay.substring(0, 300) + "...";
+                                }
+                            }
+                        } catch (e) {
+                            // If parsing fails, it's not a JSON string, or not in the expected format.
+                            // In this case, `contentToDisplay` remains the original raw string,
+                            // and will be handled by the generic truncation below.
+                            console.warn("[TaskAgent] Search result content was not a recognizable JSON format, treating as plain text.", e);
+                        }
+
+                        // Apply a generic truncation if the content (parsed or unparsed) is still too long
+                        if (contentToDisplay.length > 150) {
+                            contentToDisplay = contentToDisplay.substring(0, 150) + "...";
+                        }
+
+                        return `Found ${toolOutput.resultCount} relevant results. Here's a snippet from the top result: "${contentToDisplay}"`;
                     } else {
                         return `Found ${toolOutput.resultCount} relevant results in the knowledge base.`;
                     }

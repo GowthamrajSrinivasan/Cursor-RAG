@@ -12,7 +12,13 @@
       "Bash(open:*)",
       "Bash(lsof:*)",
       "Bash(kill:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(gh repo create:*)",
+      "Bash(brew install:*)",
+      "Bash(gh auth:*)",
+      "Bash(git remote remove:*)",
+      "Bash(git remote rename:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

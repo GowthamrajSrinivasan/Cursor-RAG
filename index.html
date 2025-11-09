@@ -108,10 +108,10 @@
                         Show Logs
                     </button>
                 </div>
-                <div id="queryLogsContainer" class="hidden flex-grow relative">
+                <div id="queryLogsContainer" class="flex-grow relative">
                     <div id="queryLogsContent" class="query-logs-content absolute inset-0 bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm text-gray-800 overflow-y-auto font-mono">
                         <!-- Query logs will be loaded here -->
-                        <p class="text-gray-500">No logs loaded yet.</p>
+                        <p class="text-gray-500">Loading logs..</p>
                     </div>
                 </div>
             </div>
@@ -281,8 +281,25 @@
             }
         });
 
-        // Initial load of stats
+        // Initial load of stats and logs
         updateStats();
+
+        // Load logs initially since they're visible by default
+        (async () => {
+            try {
+                const response = await fetch(API_AGENT_STATS);
+                const data = await response.json();
+                if (data.success && data.queryLogs) {
+                    renderQueryLogs(data.queryLogs);
+                } else {
+                    queryLogsContent.innerHTML = '<p class="text-gray-500">No logs available.</p>';
+                }
+            } catch (error) {
+                console.error('Error fetching initial logs:', error);
+                queryLogsContent.innerHTML = '<p class="text-gray-500">No logs loaded yet.</p>';
+            }
+        })();
+
         // Periodically update stats (e.g., every 10 seconds)
         setInterval(updateStats, 10000); // Update every 10 seconds for real-time feel
     </script>
